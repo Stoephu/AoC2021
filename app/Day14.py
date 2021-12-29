@@ -82,6 +82,7 @@ min_letter, min_value = (k:=min(letter_counts, key= letter_counts.get), letter_c
 print(min_letter, min_value)
 print(f'Result {max_value-min_value}')
 # %%
+"""
 # %%
 letter_counts = {}
 for i in range(len(template) - 1):
@@ -99,3 +100,23 @@ print(max_letter, max_value)
 min_letter, min_value = (k:=min(letter_counts, key= letter_counts.get), letter_counts[k])
 print(min_letter, min_value)
 print(f'Result {max_value-min_value}')
+"""
+# %%
+
+shortcuts = {}
+next_nodes=[]
+# shortcut
+# rule: (startAge, endAge, Node)
+rule, value =  list(rules.items())[0]
+_, node = value
+shortcuts[rule] = 0
+next_nodes.extend([(node.left_node,1),(node.right_node,1)])
+while next_nodes:
+    node, step = next_nodes.pop()
+    if not node.rule in shortcuts:
+        shortcuts[node.rule] = step
+        next_nodes.extend([(node.left_node,1+step),(node.right_node,1+step)])
+    else:
+        if shortcuts[node.rule] > step:
+            shortcuts[node.rule] = step
+# %%
