@@ -65,15 +65,13 @@ def cube_num(ranges):
     return (xs[1]-xs[0])*(ys[1]-ys[0])*(zs[1]-zs[0])
 # %%
 def split_cube_from_off(on_range,off_range):
-    print(f'split cube {on_range} {off_range}')
     compact_off = overlap(on_range,off_range)
-    print(f'{compact_off=}')
     if not compact_off:
         return None
     top_cube = Range((compact_off.xs[1],on_range.xs[1]),compact_off.ys,compact_off.zs)
     bottom_cube = Range((on_range.xs[0],compact_off.xs[0]),compact_off.ys,compact_off.zs)
     front_cube = Range(compact_off.xs,(compact_off.ys[1],on_range.ys[1]),compact_off.zs)
-    back_cube = Range(compact_off.xs,(on_range.ys[0],compact_off.ys[1]),compact_off.zs)
+    back_cube = Range(compact_off.xs,(on_range.ys[0],compact_off.ys[0]),compact_off.zs)
     left_cube = Range(compact_off.xs,compact_off.ys,(on_range.zs[0],compact_off.zs[0]))
     right_cube = Range(compact_off.xs,compact_off.ys,(compact_off.zs[1],on_range.zs[1]))
     t_f_edge = Range((compact_off.xs[1],on_range.xs[1]),(compact_off.ys[1],on_range.ys[1]),compact_off.zs)
@@ -81,9 +79,9 @@ def split_cube_from_off(on_range,off_range):
     t_l_edge = Range((compact_off.xs[1],on_range.xs[1]),compact_off.ys,(on_range.zs[0],compact_off.zs[0]))
     t_r_edge = Range((compact_off.xs[1],on_range.xs[1]),compact_off.ys,(compact_off.zs[1],on_range.zs[1]))
     l_f_edge = Range(compact_off.xs,(compact_off.ys[1],on_range.ys[1]),(on_range.zs[0],compact_off.zs[0]))
-    r_f_edge = Range(compact_off.xs,(compact_off.ys[1],on_range.ys[1]),(compact_off.zs[1],on_range.zs[1]))
-    l_b_edge = Range(compact_off.xs,(on_range.ys[0],compact_off.ys[1]),(on_range.zs[0],compact_off.zs[0]))
-    r_b_edge = Range(compact_off.xs,(on_range.ys[0],compact_off.ys[1]),(compact_off.zs[1],on_range.zs[1]))
+    r_f_edge = Range(compact_off.xs,(compact_off.ys[1],on_range.ys[1]),(compact_off.zs[1],on_range.zs[1])) 
+    l_b_edge = Range(compact_off.xs,(on_range.ys[0],compact_off.ys[0]),(on_range.zs[0],compact_off.zs[0]))
+    r_b_edge = Range(compact_off.xs,(on_range.ys[0],compact_off.ys[0]),(compact_off.zs[1],on_range.zs[1]))
     b_f_edge = Range((on_range.xs[0],compact_off.xs[0]),(compact_off.ys[1],on_range.ys[1]),compact_off.zs)
     b_b_edge = Range((on_range.xs[0],compact_off.xs[0]),(on_range.ys[0],compact_off.ys[1]),compact_off.zs)
     b_l_edge = Range((on_range.xs[0],compact_off.xs[0]),compact_off.ys,(on_range.zs[0],compact_off.zs[0]))
@@ -108,23 +106,31 @@ def split_cube_from_off(on_range,off_range):
     b_b_r_corner]
     cubes.extend(edges)
     cubes.extend(corners)
-    print(f'{cubes=}')
-    return [cube for cube in cubes if cube_num(cube)]
+    non_zero_cubes =  [cube for cube in cubes if cube_num(cube)]
+    return non_zero_cubes
 # %%
 # slice all on cubes with off cubes if required
 def resolve_off(commands):
     only_on_commands = []
-    for i,com in enumerate(commands):
+    next = commands.copy()
+    new = None
+    done = []
+    while len(next):
+        next = new.copy() if new else next
+        com = next.pop(0)
+        new = []
         if not com.flip_on:
-            for j, com_j in enumerate(commands[i:]):
+            for j, com_j in enumerate(next):
                 if com_j.flip_on:
                     new_cubes = split_cube_from_off(com_j.ranges, com.ranges)
                     if not new_cubes:
                         continue
-                    commands.pop(i+j)
                     for cube in new_cubes:
-                        commands.insert(i+j,Command(True,cube))
-        
+                        new.append(Command(True,cube))
+                else:
+                    new.append(com_j)
+        else:
+            done.append(com)
     for com in commands:
         if com.flip_on:
             only_on_commands.append(com)
@@ -132,22 +138,43 @@ def resolve_off(commands):
 # %%
 def resolve_on_commands(input):
     commands = input.copy()
-    for i, com in enumerate(commands):
-        print(f'{i}')
-        for j, com_j in enumerate(commands[i:]):
+    i = 0
+    done = []
+    new = None
+    next = commands.copy()
+    while len(next):
+        print(f'{i=}: {len(next)=}')
+        next = new.copy() if new else next
+        com = next.pop(0)
+        new = []
+        done.append(com)
+        for j, com_j in enumerate(next):
+            if not j % 50000:
+                print(f'{j=}: {len(next)}')
             overlap_cube = overlap(com.ranges,com_j.ranges)
-            print(f'{overlap_cube=}')
             if not overlap_cube:
                 continue
-            commands.pop(i+j)
             new_cubes = split_cube_from_off(com_j.ranges, overlap_cube)
-            print(f'{new_cubes=}')
             if new_cubes:
                 for cube in new_cubes:
-                    commands.insert(i+j,Command(True,cube))
-    return commands
-#%%
-#tests
-test = [Command(True,Range([0,10],(0,10),(0,10))), Command(True,Range((4,6),(4,6),(-2,5)))]
-split_cube_from_off(test[0].ranges,test[1].ranges)
+                    new.append(Command(True,cube))
+            else:
+                new.append(com_j)
+        i += 1
+    return done
+
+# %%
+only_on = resolve_off(commands)
+# %%
+unique_on = resolve_on_commands(only_on)
+# %%
+# part 1 
+initialitation_cube = Range((-50,50),(-50,50),(-50,50))
+num_on_cube = 0
+for com in unique_on:
+    flip_on, cube = com
+    print(cube, initialitation_cube)
+    o = overlap(initialitation_cube,cube)
+    num_on_cube += cube_num(o) if o else 0
+print(num_on_cube)
 # %%
