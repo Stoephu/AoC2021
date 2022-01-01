@@ -10,13 +10,13 @@ def command(line):
     if flip_string == "on":
         flip_on = True
     coords_string = coords_string.replace('=',',').replace('..',',').split(',')
-    x_range = int(coords_string[1]),int(coords_string[2])
-    y_range = int(coords_string[4]),int(coords_string[5])
-    z_range = int(coords_string[7]),int(coords_string[8])
-    return Command(flip_on,Range(x_range,y_range,z_range))
+    x_range = int(coords_string[1]),int(coords_string[2]) +1 
+    y_range = int(coords_string[4]),int(coords_string[5]) +1
+    z_range = int(coords_string[7]),int(coords_string[8]) +1
+    return Command(flip_on,Range(x_range,y_range,z_range)) 
 #%%
 inp =  [line.strip() for line in open('../inputs/small_day22.txt')]
-commands = [command(line) for line in inp][::-1]
+commands = [command(line) for line in inp][:3][::-1]
 
 # %%
 def inside(o_range,i_range) -> bool:
@@ -75,7 +75,7 @@ def split_cube_from_off(on_range,off_range):
     left_cube = Range(compact_off.xs,compact_off.ys,(on_range.zs[0],compact_off.zs[0]))
     right_cube = Range(compact_off.xs,compact_off.ys,(compact_off.zs[1],on_range.zs[1]))
     t_f_edge = Range((compact_off.xs[1],on_range.xs[1]),(compact_off.ys[1],on_range.ys[1]),compact_off.zs)
-    t_b_edge = Range((compact_off.xs[1],on_range.xs[1]),(on_range.ys[0],compact_off.ys[1]),compact_off.zs)
+    t_b_edge = Range((compact_off.xs[1],on_range.xs[1]),(on_range.ys[0],compact_off.ys[0]),compact_off.zs)
     t_l_edge = Range((compact_off.xs[1],on_range.xs[1]),compact_off.ys,(on_range.zs[0],compact_off.zs[0]))
     t_r_edge = Range((compact_off.xs[1],on_range.xs[1]),compact_off.ys,(compact_off.zs[1],on_range.zs[1]))
     l_f_edge = Range(compact_off.xs,(compact_off.ys[1],on_range.ys[1]),(on_range.zs[0],compact_off.zs[0]))
@@ -83,23 +83,23 @@ def split_cube_from_off(on_range,off_range):
     l_b_edge = Range(compact_off.xs,(on_range.ys[0],compact_off.ys[0]),(on_range.zs[0],compact_off.zs[0]))
     r_b_edge = Range(compact_off.xs,(on_range.ys[0],compact_off.ys[0]),(compact_off.zs[1],on_range.zs[1]))
     b_f_edge = Range((on_range.xs[0],compact_off.xs[0]),(compact_off.ys[1],on_range.ys[1]),compact_off.zs)
-    b_b_edge = Range((on_range.xs[0],compact_off.xs[0]),(on_range.ys[0],compact_off.ys[1]),compact_off.zs)
+    b_b_edge = Range((on_range.xs[0],compact_off.xs[0]),(on_range.ys[0],compact_off.ys[0]),compact_off.zs)
     b_l_edge = Range((on_range.xs[0],compact_off.xs[0]),compact_off.ys,(on_range.zs[0],compact_off.zs[0]))
     b_r_edge = Range((on_range.xs[0],compact_off.xs[0]),compact_off.ys,(compact_off.zs[1],on_range.zs[1]))
     t_f_l_corner =  Range((compact_off.xs[1],on_range.xs[1]),(compact_off.ys[1],on_range.ys[1]),(on_range.zs[0],compact_off.zs[0]))
     t_f_r_corner =  Range((compact_off.xs[1],on_range.xs[1]),(compact_off.ys[1],on_range.ys[1]),(compact_off.zs[1],on_range.zs[1]))
-    f_b_l_corner = Range((compact_off.xs[1],on_range.xs[1]),(on_range.ys[0],compact_off.ys[1]),(on_range.zs[0],compact_off.zs[0]))
-    f_b_r_corner = Range((compact_off.xs[1],on_range.xs[1]),(on_range.ys[0],compact_off.ys[1]),(compact_off.zs[1],on_range.zs[1]))
+    t_b_l_corner = Range((compact_off.xs[1],on_range.xs[1]),(on_range.ys[0],compact_off.ys[0]),(on_range.zs[0],compact_off.zs[0]))
+    t_b_r_corner = Range((compact_off.xs[1],on_range.xs[1]),(on_range.ys[0],compact_off.ys[0]),(compact_off.zs[1],on_range.zs[1]))
     b_f_l_corner =  Range((on_range.xs[0],compact_off.xs[0]),(compact_off.ys[1],on_range.ys[1]),(on_range.zs[0],compact_off.zs[0]))
     b_f_r_corner =  Range((on_range.xs[0],compact_off.xs[0]),(compact_off.ys[1],on_range.ys[1]),(compact_off.zs[1],on_range.zs[1]))
-    b_b_l_corner = Range((on_range.xs[0],compact_off.xs[0]),(on_range.ys[0],compact_off.ys[1]),(on_range.zs[0],compact_off.zs[0]))
-    b_b_r_corner = Range((on_range.xs[0],compact_off.xs[0]),(on_range.ys[0],compact_off.ys[1]),(compact_off.zs[1],on_range.zs[1]))
+    b_b_l_corner = Range((on_range.xs[0],compact_off.xs[0]),(on_range.ys[0],compact_off.ys[0]),(on_range.zs[0],compact_off.zs[0]))
+    b_b_r_corner = Range((on_range.xs[0],compact_off.xs[0]),(on_range.ys[0],compact_off.ys[0]),(compact_off.zs[1],on_range.zs[1]))
     cubes =  [top_cube,bottom_cube,front_cube,back_cube,left_cube,right_cube]
     edges = [t_f_edge,t_b_edge,t_l_edge,t_r_edge,l_f_edge,r_f_edge,l_b_edge,r_b_edge,b_f_edge,b_b_edge,b_l_edge,b_r_edge]
     corners = [t_f_l_corner,
     t_f_r_corner,
-    f_b_l_corner,
-    f_b_r_corner,
+    t_b_l_corner,
+    t_b_r_corner,
     b_f_l_corner,
     b_f_r_corner,
     b_b_l_corner,
@@ -131,7 +131,7 @@ def resolve_off(commands):
                     new.append(com_j)
         else:
             done.append(com)
-    for com in commands:
+    for com in done:
         if com.flip_on:
             only_on_commands.append(com)
     return only_on_commands
@@ -143,14 +143,11 @@ def resolve_on_commands(input):
     new = None
     next = commands.copy()
     while len(next):
-        print(f'{i=}: {len(next)=}')
         next = new.copy() if new else next
         com = next.pop(0)
         new = []
         done.append(com)
         for j, com_j in enumerate(next):
-            if not j % 50000:
-                print(f'{j=}: {len(next)}')
             overlap_cube = overlap(com.ranges,com_j.ranges)
             if not overlap_cube:
                 continue
@@ -164,17 +161,19 @@ def resolve_on_commands(input):
     return done
 
 # %%
+# part 1 
+def count_cubes_init(unique_on):
+    initialitation_cube = Range((-50,50),(-50,50),(-50,50))
+    num_on_cube = 0
+    for com in unique_on:
+        flip_on, cube = com
+        o = overlap(initialitation_cube,cube)
+        num_on_cube += cube_num(o) if o else 0
+    print(num_on_cube)
+# %%
 only_on = resolve_off(commands)
+count_cubes_init(only_on)
 # %%
 unique_on = resolve_on_commands(only_on)
-# %%
-# part 1 
-initialitation_cube = Range((-50,50),(-50,50),(-50,50))
-num_on_cube = 0
-for com in unique_on:
-    flip_on, cube = com
-    print(cube, initialitation_cube)
-    o = overlap(initialitation_cube,cube)
-    num_on_cube += cube_num(o) if o else 0
-print(num_on_cube)
+count_cubes_init(unique_on)
 # %%
