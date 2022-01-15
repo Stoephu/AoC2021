@@ -16,8 +16,8 @@ def command(line):
     z_range = Coord(int(coords_string[7]),int(coords_string[8]) -int(coords_string[7]) +1) #if flip_on else int(coords_string[8])
     return Command(flip_on,Range(x_range,y_range,z_range)) 
 #%%
-inp =  [line.strip() for line in open('../inputs/small_day22.txt')]
-commands = [command(line) for line in inp][::-1]
+inp =  [line.strip() for line in open('../inputs/day22.txt')]
+commands = [command(line) for line in inp]
 
 # %%
 def cube_num(ranges):
@@ -40,7 +40,9 @@ def get_overlap_coord(o_range,i_range):
     new = Coord(anchor, size)
     return new
 
-def overlap(ranges1,ranges2) -> list:
+def overlap(com1:Command,com2:Command) -> list:
+    ranges1 = com1.ranges
+    ranges2 = com2.ranges
     x1,x2 = ranges1.x,ranges2.x
     y1,y2 = ranges1.y,ranges2.y
     z1,z2 = ranges1.z,ranges2.z
@@ -63,8 +65,10 @@ def overlap(ranges1,ranges2) -> list:
     return Range(*new_block)
     
 # %%
-def split_cube_from_off(on_range,off_range):
-    compact_off = overlap(on_range,off_range)
+def split_cube_from_off(on_cube: Command,off_cube: Command):
+    on_range = on_cube.ranges
+    off_range = off_cube.ranges
+    compact_off = overlap(on_cube,off_cube)
     if not compact_off:
         return None
     top_cube = Range(Coord(ena(compact_off.x),ena(on_range.x)-ena(compact_off.x)),compact_off.y,compact_off.z)
@@ -102,86 +106,48 @@ def split_cube_from_off(on_range,off_range):
     return non_zero_cubes
 # %%
 # slice all on cubes with off cubes if required
-def resolve_off(commands):
-    only_on_commands = []
-    next = commands.copy()
-    new = None
-    done = []
-    while len(next):
-        next = new.copy() if new else next
-        com = next.pop(0)
-        new = []
-        if not com.flip_on:
-            for j, com_j in enumerate(next):
-                if com_j.flip_on:
-                    overlap_cube = overlap(com.ranges,com_j.ranges)
-                    if not overlap_cube:
-                        continue
-                    new_cubes = split_cube_from_off(com_j.ranges, com.ranges)
-                    if not new_cubes:
-                        continue
-                    for cube in new_cubes:
-                        new.append(Command(True,cube))
-                else:
-                    new.append(com_j)
-        else:
-            done.append(com)
-    for com in done:
-        if com.flip_on:
-            only_on_commands.append(com)
-    return only_on_commands
-# %%
-def resolve_on_commands(input):
-    commands = input.copy()
-    i = 0
-    done = []
-    new = None
-    next = commands.copy()
-    while len(next):
-        next = new.copy() if new else next
-        com = next.pop(0)
-        new = []
-        done.append(com)
-        for j, com_j in enumerate(next):
-            overlap_cube = overlap(com.ranges,com_j.ranges)
-            if not overlap_cube:
-                continue
-            new_cubes = split_cube_from_off(com_j.ranges, overlap_cube)
-            if new_cubes:
-                for cube in new_cubes:
-                    new.append(Command(True,cube))
+def resolve(commands):
+    on_cubes = []
+    todo = commands.copy()
+    while todo:
+        com: Command = todo.pop(0)
+        new_cubes = []
+        for com_j in on_cubes:
+            if overlap(com_j, com):
+                cubes = split_cube_from_off(com_j,com)
+                for cube in cubes:
+                    new_command = Command(True,cube)
+                    new_cubes.append(new_command)
             else:
-                new.append(com_j)
-        i += 1
-    return done
+                new_cubes.append(com_j)
+        if com.flip_on:
+            new_cubes.append(com)
+        on_cubes = new_cubes.copy()
+    print(f'{len(on_cubes)=}')
+    return on_cubes
+
 
 # %%
 # part 1 
 def count_cubes_init(unique_on):
-    initialitation_cube = Range(Coord(-50,101),Coord(-50,101),Coord(-50,101))
+    initialitation_cube = Command(True,Range(Coord(-50,101),Coord(-50,101),Coord(-50,101)))
     num_on_cube = 0
     for com in unique_on:
-        flip_on, cube = com
-        o = overlap(initialitation_cube,cube)
+        o = overlap(initialitation_cube,com)
         num_on_cube += cube_num(o) if o else 0
     print(num_on_cube)
 # %%
-only_on = resolve_off(commands)
+only_on = resolve(commands)
 count_cubes_init(only_on)
-# %%
-unique_on = resolve_on_commands(only_on)
-count_cubes_init(unique_on)
+
 # %%
 Off = Command(False,Range(Coord(9,3),Coord(9,3),Coord(9,3)))
 On_2 = Command(True, Range(Coord(11,3),Coord(11,3),Coord(11,3)))
 On_1 = Command(True, Range(Coord(10,3),Coord(10,3),Coord(10,3)))
 def test(new_com = None):
     commands = [Off,On_2,On_1] if not new_com else new_com
-    return count_cubes_init(resolve_off(commands))
+    return count_cubes_init(resolve(commands))
 
-def test2(new_com = None):
-    commands = [Off,On_2,On_1] if not new_com else new_com
-    return count_cubes_init(resolve_on_commands(commands))
 def list_all_coords(commands):
     l = list()
     for command in commands:
@@ -195,4 +161,11 @@ def list_all_coords(commands):
     return l
 # %%
 #test()
+# %%
+def count_cubes(commands):
+    num_cubes = 0
+    for com in commands:
+        num_cubes += cube_num(com.ranges)
+    print(num_cubes)
+count_cubes(only_on)
 # %%
