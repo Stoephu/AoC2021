@@ -41,19 +41,22 @@ def farthest_away(scn):
             farthest_beacon = beacon
     return farthest_beacon
 
+
 def try_to_fit(scn0, scn1):
     set_scanner = {tuple(x) for x in scn0.tolist()}
     anchor_beacon = None
     best_score = 0
     scn0_beacon = None
     best_rotation = None
-    for k, a_beacon in enumerate(scn1):
-        for i, beacon in enumerate(scn0):
-            offset = beacon - a_beacon
-            offset_scanner = scn1 + offset
-            for j, rot in enumerate(elements):
-                set_rotated_scanner = {tuple(x) for x in rot.dot(offset_scanner.T)}
-                score = len(set_scanner.intersection(set_rotated_scanner))
+    for j, rot in enumerate(elements):
+        
+        rotated_scanner = np.array([rot.dot(vec) for vec in scn1])#np.einsum('ij,kj->ik',rot,scn1)#rot.dot(scn1)
+        for k, a_beacon in enumerate(rotated_scanner):
+            for i, beacon in enumerate(scn0):
+                offset = beacon - a_beacon
+                offset_scanner = scn1 + offset
+                set_rotated_scanner = {tuple(x) for x in offset_scanner}
+                score = len(x :=set_scanner.intersection(set_rotated_scanner))
                 if score > best_score:
                     best_score = score
                     scn0_beacon = beacon
