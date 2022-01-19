@@ -33,6 +33,10 @@ def taxi_metric(coord1, coord2):
     x,y,z = np.abs(coord2 - coord1)
     return x + y + z
 
+def eucl_metric(coord1, coord2):
+    x,y,z = coord2 - coord1
+    return x*x + y*y + z*z
+
 def farthest_away(scn):
     farthest_beacon = None
     farthest_distance = 0
@@ -66,7 +70,7 @@ def try_to_fit(scn0, scn1):
 
 # %%
 def get_signature(beacon, beacons):
-    signature =[taxi_metric(beacon,x) for x in beacons] 
+    signature =[eucl_metric(beacon,x) for x in beacons] 
     signature.sort()
     return set(signature[1:])
 
