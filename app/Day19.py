@@ -1,4 +1,5 @@
 from operator import truediv
+from turtle import distance
 import numpy as np
 from numpy.linalg import matrix_power as mp
 # %%
@@ -24,6 +25,7 @@ for line in inp:
         beacons.append(coord)
     else:
         continue
+scanners.append(beacons)
 scanners.pop(0)
 scanners = [np.array(l) for l in scanners]
 # %%
@@ -49,30 +51,30 @@ def farthest_away(scn):
 
 def try_to_fit(scn0, scn1):
     set_scanner = {tuple(x) for x in scn0.tolist()}
-    anchor_beacon = None
     best_score = 0
-    scn0_beacon = None
-    best_rotation = None
+    matching_coords = None
+    rotation_index = 0
+    best_offset = None
     for j, rot in enumerate(elements):
-        rotated_scanner = np.array([rot.dot(vec) for vec in scn1],dtype=int)
+        rotated_scanner = rot.dot(scn1.T).T
         for k, a_beacon in enumerate(rotated_scanner):
             for i, beacon in enumerate(scn0):
                 offset = beacon - a_beacon
-                offset_scanner = scn1 + offset
+                offset_scanner = rotated_scanner + offset
                 set_rotated_scanner = {tuple(x) for x in offset_scanner}
                 score = len(set_scanner.intersection(set_rotated_scanner))
                 if score > best_score:
                     best_score = score
-                    scn0_beacon = beacon
-                    best_rotation = j
-                    anchor_beacon = a_beacon
-    return best_score, anchor_beacon, scn0_beacon, best_rotation
+                    rotation_index = j
+                    best_offset = offset
+                    matching_coords = offset_scanner.copy()
+    return best_score, matching_coords, best_offset, rotation_index
 
 # %%
 def get_signature(beacon, beacons):
     signature =[eucl_metric(beacon,x) for x in beacons] 
     signature.sort()
-    return set(signature[1:])
+    return frozenset(signature[1:])
 
 def is_signature_inside(signature, signatures):
     for sig in signatures:
@@ -85,13 +87,51 @@ def is_signature_inside(signature, signatures):
     return False
 
 
+def unique_signatures():
+    signatures = []
 
-signatures = []
+    for scanner in scanners:
+        for beacon in scanner:
+            signature = get_signature(beacon, scanner)
+            if not is_signature_inside(signature, signatures):
+                signatures.append(signature)
 
-for scanner in scanners:
-    for beacon in scanner:
-        signature = get_signature(beacon, scanner)
-        if not is_signature_inside(signature, signatures):
-            signatures.append(signature)
+    print(len(signatures))
 
-print(len(signatures))
+# %%
+def common_beacons(scn1,scn2):
+    sigs1 = [get_signature(beacon, scn1) for beacon in scn1]
+    print(sigs1)
+    sigs2 = [get_signature(beacon, scn2) for beacon in scn2]
+    print(sigs2)
+    commons = [signature for signature in sigs1 if is_signature_inside(signature,sigs2)]
+    return commons
+# %%
+def rotates_and_translates(scanners):
+    todo = scanners[1:].copy()
+    all_coords = scanners[0].copy()
+    distances = []
+    while todo:
+        temp = []
+        for i, scanner in enumerate(todo):
+            matches, matched_coords, offset, rot_index = try_to_fit(all_coords,scanner)
+            if matches < 12:
+                temp.append(scanner)
+            else:
+                all_coords = np.append(all_coords,matched_coords, axis=0)
+                all_coords = np.unique(all_coords,axis=0)
+                distances.append(offset)
+                print(f'found match {i} / {len(todo)} / {len(scanners)}')
+        todo = temp
+    return all_coords,distances
+# %%
+
+result, offsets = rotates_and_translates(scanners)
+#%%
+offsets.append(np.array([0,0,0]))
+distances = []
+for i, offs in enumerate(offsets):
+    for offj in offsets[i:]:
+        distances.append(taxi_metric(offs,offj))
+print(f'{max(distances)=}')
+# %%
